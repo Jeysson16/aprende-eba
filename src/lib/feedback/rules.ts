@@ -4,6 +4,7 @@ import type {
   CriterionResult,
   FeedbackReport,
   Instrument,
+  Question,
   RubricLevel,
 } from "@/lib/types";
 
@@ -30,6 +31,66 @@ function levelLabel(level: RubricLevel) {
 function normalizeTextareaScore(value: string) {
   if (!value.trim()) return 0;
   return value.trim().length > 70 ? 2 : 1;
+}
+
+function excerpt(value: string, maxLength = 110) {
+  const clean = value.replace(/\s+/g, " ").trim();
+  if (clean.length <= maxLength) {
+    return clean;
+  }
+
+  return `${clean.slice(0, maxLength - 1).trimEnd()}...`;
+}
+
+function performanceVerb(percentage: number) {
+  if (percentage >= 85) return "demuestras un dominio consistente";
+  if (percentage >= 70) return "muestras un avance adecuado";
+  if (percentage >= 50) return "todavía necesitas consolidar";
+  return "requiere una atención prioritaria";
+}
+
+function getRelatedQuestions(instrument: Instrument | undefined, criterionId: string) {
+  return instrument?.questions.filter((question) => question.criterionId === criterionId) ?? [];
+}
+
+function getEvidenceText(
+  attempt: Omit<AttemptRecord, "feedback">,
+  relatedQuestions: Question[],
+) {
+  const openQuestion = relatedQuestions.find((question) => question.type === "textarea");
+  const openAnswer = openQuestion ? attempt.answers[openQuestion.id]?.trim() : "";
+  if (openAnswer) {
+    return ` En tu respuesta también señalas: "${excerpt(openAnswer)}".`;
+  }
+
+  const singleQuestion = relatedQuestions.find((question) => question.type === "single");
+  const selectedValue = singleQuestion ? attempt.answers[singleQuestion.id] : undefined;
+  const option = singleQuestion?.options?.find((item) => item.value === selectedValue);
+  if (singleQuestion && option) {
+    return ` En la autoevaluación marcaste "${option.label.toLowerCase()}" en "${singleQuestion.prompt}".`;
+  }
+
+  return "";
+}
+
+function buildStrengthMessage(
+  attempt: Omit<AttemptRecord, "feedback">,
+  instrument: Instrument | undefined,
+  criterion: CriterionResult,
+) {
+  const relatedQuestions = getRelatedQuestions(instrument, criterion.criterionId);
+  const evidence = getEvidenceText(attempt, relatedQuestions);
+  return `En ${criterion.title.toLowerCase()} ${performanceVerb(criterion.percentage)}: alcanzaste ${criterion.percentage}% y eso favorece tu desempeño en la sesión.${evidence}`.trim();
+}
+
+function buildImprovementMessage(
+  attempt: Omit<AttemptRecord, "feedback">,
+  instrument: Instrument | undefined,
+  criterion: CriterionResult,
+) {
+  const relatedQuestions = getRelatedQuestions(instrument, criterion.criterionId);
+  const evidence = getEvidenceText(attempt, relatedQuestions);
+  return `Debes reforzar ${criterion.title.toLowerCase()}: obtuviste ${criterion.percentage}% y este criterio todavía necesita mayor precisión, desarrollo y práctica guiada.${evidence}`.trim();
 }
 
 export function buildCriterionResults(
@@ -78,28 +139,47 @@ export function buildCriterionResults(
   });
 }
 
-export function buildFallbackFeedback(attempt: Omit<AttemptRecord, "feedback">): FeedbackReport {
-  const instrument = getInstrumentById(attempt.instrumentId);
+export function buildFallbackFeedback(
+  attempt: Omit<AttemptRecord, "feedback">,
+  providedInstrument?: Instrument,
+): FeedbackReport {
+  const instrument = providedInstrument ?? getInstrumentById(attempt.instrumentId);
   const sorted = [...attempt.criteriaResults].sort((a, b) => a.percentage - b.percentage);
   const weakest = sorted[0];
   const strongest = [...attempt.criteriaResults].sort((a, b) => b.percentage - a.percentage)[0];
+  const strengths = [...attempt.criteriaResults]
+    .sort((a, b) => b.percentage - a.percentage)
+    .slice(0, 2)
+    .map((criterion) => buildStrengthMessage(attempt, instrument, criterion));
+  const improvements = [...attempt.criteriaResults]
+    .sort((a, b) => a.percentage - b.percentage)
+    .slice(0, 2)
+    .map((criterion) => buildImprovementMessage(attempt, instrument, criterion));
   const studyRecommendation =
     instrument?.studyRecommendations[weakest.criterionId] ??
     "Revisa nuevamente la sesión, identifica tus errores y realiza un nuevo intento.";
+  const priorityFocus = weakest ? weakest.title.toLowerCase() : "los criterios pendientes";
+  const strongestFocus = strongest ? strongest.title.toLowerCase() : "tu participación general";
 
   return {
     summary:
       attempt.percentage >= 70
-        ? `Tu desempeño global es ${levelLabel(attempt.level).toLowerCase()}. Has avanzado bien y puedes seguir profundizando.`
-        : `Tu desempeño global está ${levelLabel(attempt.level).toLowerCase()}. Necesitas refuerzo guiado para consolidar el aprendizaje.`,
-    strengths: strongest ? strongest.strengths : ["Participaste en el instrumento y generaste evidencia para mejorar."],
-    improvements: weakest ? weakest.improvements : ["Necesitas revisar algunos criterios del instrumento."],
+        ? `Tu desempeño global se ubica en ${levelLabel(attempt.level).toLowerCase()}. Tu avance más sólido aparece en ${strongestFocus} y tu prioridad inmediata es fortalecer ${priorityFocus}.`
+        : `Tu desempeño global se ubica en ${levelLabel(attempt.level).toLowerCase()}. Ya cuentas con evidencia para mejorar, pero necesitas reforzar especialmente ${priorityFocus} antes del siguiente intento.`,
+    strengths:
+      strengths.length > 0
+        ? strengths
+        : ["Participaste en el instrumento y generaste evidencia suficiente para orientar tu mejora."],
+    improvements:
+      improvements.length > 0
+        ? improvements
+        : ["Necesitas revisar los criterios con menor avance y volver a intentarlo con apoyo guiado."],
     explanation: weakest
-      ? `La mayor dificultad aparece en ${weakest.title.toLowerCase()}, por eso conviene reforzar ese criterio antes del siguiente intento.`
+      ? `La principal dificultad aparece en ${weakest.title.toLowerCase()}, porque este criterio exige demostrar la competencia con mayor claridad, sustento y organización.`
       : "Tus respuestas muestran aspectos a reforzar en el siguiente intento.",
     studyRecommendation,
     nextStep: weakest
-      ? `Vuelve a practicar enfocándote primero en ${weakest.title.toLowerCase()} y luego repite el formulario.`
+      ? `Antes de repetir el formulario, revisa un ejemplo breve del criterio ${weakest.title.toLowerCase()}, toma notas de lo que te faltó y vuelve a intentarlo aplicando esa mejora.`
       : "Repite la actividad aplicando la retroalimentación recibida.",
     provider: "reglas",
   };
