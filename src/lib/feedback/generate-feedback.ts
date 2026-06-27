@@ -27,12 +27,11 @@ export async function generateFeedback(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-goog-api-key": apiKey,
         },
         signal: controller.signal,
         body: JSON.stringify({
