@@ -49,6 +49,12 @@ export default async function AdminDashboardPage() {
             <Link href="/admin/instrumentos" className="rounded-full border border-white/10 px-4 py-2 text-slate-100">
               Ver instrumento
             </Link>
+            <Link
+              href={`/admin/instrumentos/${firstInstrument.id}/exportar`}
+              className="rounded-full border border-cyan-300/40 px-4 py-2 text-cyan-100"
+            >
+              Exportar formato
+            </Link>
             <Link href="/admin/respuestas" className="rounded-full border border-white/10 px-4 py-2 text-slate-100">
               Respuestas
             </Link>

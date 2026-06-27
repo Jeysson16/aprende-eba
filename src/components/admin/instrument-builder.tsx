@@ -1,9 +1,13 @@
 import type { AttemptRecord, Instrument } from "@/lib/types";
 
+type InstrumentVariant = "web" | "export";
+
 type InstrumentBuilderProps = {
   instrument: Instrument;
   attempts?: AttemptRecord[];
   showTemplateRows?: boolean;
+  minimumRows?: number;
+  variant?: InstrumentVariant;
 };
 
 function formatInstrumentDate(value: string) {
@@ -40,85 +44,169 @@ function getCriterionMark(
   return undefined;
 }
 
-function renderMark(mark: string | undefined, target: "si" | "no") {
+function renderMark(
+  mark: string | undefined,
+  target: "si" | "no",
+  variant: InstrumentVariant,
+) {
   if (mark === target) {
-    return <span className="text-base font-black text-cyan-300">✓</span>;
+    return (
+      <span
+        className={variant === "export" ? "text-sm font-black text-black" : "text-base font-black text-cyan-300"}
+      >
+        X
+      </span>
+    );
   }
 
-  if (mark === "parcial") {
-    return <span className="text-xs font-bold text-amber-300">~</span>;
+  if (mark === "parcial" && target === "si") {
+    return (
+      <span
+        className={variant === "export" ? "text-xs font-bold text-black" : "text-xs font-bold text-amber-300"}
+      >
+        /
+      </span>
+    );
   }
 
-  return <span className="text-slate-600"> </span>;
+  return <span className={variant === "export" ? "text-black/40" : "text-slate-600"}> </span>;
 }
 
 export function InstrumentBuilder({
   instrument,
   attempts = [],
   showTemplateRows = true,
+  minimumRows = 0,
+  variant = "web",
 }: InstrumentBuilderProps) {
-  const rows =
+  const defaultRows = variant === "export" ? 8 : 5;
+  const rowCount =
     attempts.length > 0
-      ? attempts.map((attempt) => ({
-          key: attempt.id,
-          studentName: attempt.student.fullName,
-          attempt,
-        }))
+      ? Math.max(minimumRows, attempts.length)
       : showTemplateRows
-        ? Array.from({ length: 5 }, (_, index) => ({
-            key: `template-${index}`,
-            studentName: "",
-            attempt: undefined,
-          }))
-        : [];
+        ? Math.max(minimumRows, defaultRows)
+        : 0;
+
+  const rows = Array.from({ length: rowCount }, (_, index) => {
+    const attempt = attempts[index];
+
+    return {
+      key: attempt?.id ?? `template-${index}`,
+      studentName: attempt?.student.fullName ?? "",
+      attempt,
+    };
+  });
+
+  const isExport = variant === "export";
+
+  const palette = isExport
+    ? {
+        section:
+          "overflow-hidden rounded-none border border-[#000000] bg-[#f3e3d5] text-[#111111] shadow-none",
+        header: "border-b border-[#000000] bg-[#e5bea1] px-6 py-4 text-center",
+        adminLabel: "hidden",
+        title: "text-xl font-black uppercase tracking-wide text-black",
+        subtitle: "text-base font-black uppercase text-black",
+        infoRow: "bg-[#efe0d2] font-bold uppercase text-black",
+        infoBorder: "border border-[#000000]",
+        softBorder: "border border-[#000000]",
+        sectionTitle: "border border-[#000000] px-4 py-1 text-center text-sm font-black uppercase text-black",
+        sectionTitleBg: "bg-[#e5bea1]",
+        leftLabel:
+          "w-32 border border-[#000000] px-2 py-2 text-left text-[10px] font-black tracking-normal text-black",
+        leftCell: "border border-[#000000] px-3 py-2 align-top text-sm leading-6 text-black",
+        criteriaCell: "w-[14rem] border border-[#000000] px-3 py-3 align-top text-sm leading-8 text-black",
+        bottomHeader: "bg-[#ead7c7]",
+        bottomHeaderCell:
+          "border border-[#000000] px-3 py-2 text-center text-[11px] font-black uppercase leading-4 text-black",
+        studentHeader:
+          "w-[28rem] border border-[#000000] px-4 py-2 text-left text-[0.95rem] font-black uppercase text-black",
+        numberHeader:
+          "w-16 border border-[#000000] px-3 py-2 text-center text-[0.95rem] font-black text-black",
+        yesNoRow: "bg-[#efe3bf] text-[11px] font-black uppercase text-black",
+        yesNoCell: "w-14 border border-[#000000] px-2 py-2 text-center",
+        bodyRow: "bg-[#f7f3ef]",
+        numberCell: "border border-[#000000] px-2 py-2 text-sm font-black text-black",
+        studentCell: "border border-[#000000] px-3 py-2 text-xs uppercase text-black",
+        markCell: "border border-[#000000] px-2 py-2 text-center",
+      }
+    : {
+        section:
+          "overflow-hidden rounded-[2rem] border border-cyan-400/20 bg-slate-950/80 text-slate-100 shadow-[0_20px_60px_rgba(8,47,73,0.35)]",
+        header: "border-b border-cyan-400/20 bg-slate-900/95 px-6 py-5 text-center",
+        adminLabel: "text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/75",
+        title: "mt-2 text-2xl font-semibold uppercase tracking-[0.08em] text-white",
+        subtitle: "text-sm font-medium uppercase tracking-[0.28em] text-slate-300",
+        infoRow: "bg-cyan-400/10 font-semibold uppercase text-cyan-100",
+        infoBorder: "border border-cyan-400/20",
+        softBorder: "border border-cyan-400/15",
+        sectionTitle:
+          "border border-cyan-400/20 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.12em] text-cyan-100",
+        sectionTitleBg: "bg-cyan-400/10",
+        leftLabel:
+          "w-32 border border-cyan-400/15 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-200",
+        leftCell: "border border-cyan-400/15 px-4 py-3 align-top text-sm leading-7 text-slate-200",
+        criteriaCell: "w-[14rem] border border-cyan-400/15 px-4 py-4 align-top text-sm leading-8 text-slate-200",
+        bottomHeader: "bg-slate-900",
+        bottomHeaderCell:
+          "border border-cyan-400/20 px-3 py-3 text-center text-[11px] font-semibold uppercase leading-5 tracking-[0.04em] text-slate-100",
+        studentHeader:
+          "w-[28rem] border border-cyan-400/20 px-4 py-3 text-left text-lg font-semibold uppercase tracking-[0.05em] text-white",
+        numberHeader:
+          "w-16 border border-cyan-400/20 px-3 py-3 text-center text-sm font-semibold text-white",
+        yesNoRow: "bg-cyan-400/10 text-xs font-semibold uppercase text-cyan-100",
+        yesNoCell: "w-14 border border-cyan-400/15 px-2 py-2 text-center",
+        bodyRow: "bg-slate-950/70",
+        numberCell: "border border-cyan-400/15 px-3 py-3 text-sm font-semibold text-slate-200",
+        studentCell:
+          "border border-cyan-400/15 px-4 py-3 text-sm font-medium uppercase tracking-[0.02em] text-slate-100",
+        markCell: "border border-cyan-400/15 px-3 py-3 text-center",
+      };
 
   return (
-    <section className="overflow-hidden rounded-[2rem] border border-cyan-400/20 bg-slate-950/80 text-slate-100 shadow-[0_20px_60px_rgba(8,47,73,0.35)]">
-      <div className="border-b border-cyan-400/20 bg-slate-900/95 px-6 py-5 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/75">
-          Vista del instrumento para administradores
-        </p>
-        <h2 className="mt-2 text-2xl font-semibold uppercase tracking-[0.08em] text-white">
-          Instrumento de evaluación
-        </h2>
-        <p className="text-sm font-medium uppercase tracking-[0.28em] text-slate-300">
-          Lista de cotejos
-        </p>
+    <section className={palette.section}>
+      <div className={palette.header}>
+        {!isExport ? <p className={palette.adminLabel}>Vista del instrumento para administradores</p> : null}
+        <h2 className={palette.title}>Instrumento de evaluación</h2>
+        <p className={palette.subtitle}>Lista de cotejos</p>
       </div>
 
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse text-sm">
           <tbody>
-            <tr className="bg-cyan-400/10 font-semibold uppercase text-cyan-100">
-              <th
-                colSpan={2}
-                className="border border-cyan-400/20 px-4 py-3 text-left text-sm tracking-[0.18em]"
-              >
+            <tr className={palette.infoRow}>
+              <th colSpan={2} className={`${palette.infoBorder} px-4 py-3 text-left text-sm tracking-[0.18em]`}>
                 Datos informativos
               </th>
             </tr>
             <tr>
-              <td className="w-1/2 border border-cyan-400/15 px-4 py-3 align-top text-sm">
-                <span className="font-semibold text-white">Profesora:</span> {instrument.teacher}
+              <td className={`${palette.softBorder} w-1/2 px-4 py-3 align-top text-sm`}>
+                <span className={isExport ? "font-black" : "font-semibold text-white"}>Profesora:</span>{" "}
+                {instrument.teacher}
               </td>
-              <td className="w-1/2 border border-cyan-400/15 px-4 py-3 align-top text-sm">
-                <span className="font-semibold text-white">Fecha:</span> {formatInstrumentDate(instrument.date)}
-              </td>
-            </tr>
-            <tr>
-              <td className="border border-cyan-400/15 px-4 py-3 align-top text-sm">
-                <span className="font-semibold text-white">Nivel:</span> {instrument.level.toLowerCase()}
-              </td>
-              <td className="border border-cyan-400/15 px-4 py-3 align-top text-sm">
-                <span className="font-semibold text-white">Unidad:</span> {instrument.unit}
+              <td className={`${palette.softBorder} w-1/2 px-4 py-3 align-top text-sm`}>
+                <span className={isExport ? "font-black" : "font-semibold text-white"}>Fecha:</span>{" "}
+                {formatInstrumentDate(instrument.date)}
               </td>
             </tr>
             <tr>
-              <td className="border border-cyan-400/15 px-4 py-3 align-top text-sm leading-6">
-                <span className="font-semibold text-white">Sesión:</span> &quot;{instrument.sessionTitle}&quot;
+              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm`}>
+                <span className={isExport ? "font-black" : "font-semibold text-white"}>Nivel:</span>{" "}
+                {instrument.level.toLowerCase()}
               </td>
-              <td className="border border-cyan-400/15 px-4 py-3 align-top text-sm">
-                <span className="font-semibold text-white">Modalidad:</span> {instrument.modality.toUpperCase()}
+              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm`}>
+                <span className={isExport ? "font-black" : "font-semibold text-white"}>Unidad:</span>{" "}
+                {instrument.unit}
+              </td>
+            </tr>
+            <tr>
+              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm leading-6`}>
+                <span className={isExport ? "font-black" : "font-semibold text-white"}>Sesión:</span>{" "}
+                &quot;{instrument.sessionTitle}&quot;
+              </td>
+              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm`}>
+                <span className={isExport ? "font-black" : "font-semibold text-white"}>Modalidad:</span>{" "}
+                {instrument.modality.toUpperCase()}
               </td>
             </tr>
           </tbody>
@@ -127,38 +215,25 @@ export function InstrumentBuilder({
         <div className="grid min-w-[1100px] grid-cols-[1.25fr_1.75fr]">
           <table className="border-collapse text-sm">
             <thead>
-              <tr className="bg-cyan-400/10">
-                <th
-                  colSpan={2}
-                  className="border border-cyan-400/20 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.12em] text-cyan-100"
-                >
+              <tr className={palette.sectionTitleBg}>
+                <th colSpan={2} className={palette.sectionTitle}>
                   Propósitos de aprendizaje
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <th className="w-32 border border-cyan-400/15 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-200">
-                  Propósito
-                </th>
-                <td className="border border-cyan-400/15 px-4 py-3 align-top text-sm leading-7 text-slate-200">
-                  {instrument.purpose}
-                </td>
+                <th className={palette.leftLabel}>Propósito</th>
+                <td className={palette.leftCell}>{instrument.purpose}</td>
               </tr>
               <tr>
-                <th className="border border-cyan-400/15 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-200">
-                  Competencia
-                </th>
-                <td className="border border-cyan-400/15 px-4 py-3 align-top text-sm leading-7 text-slate-200">
-                  {instrument.competence}
-                </td>
+                <th className={palette.leftLabel}>Competencia</th>
+                <td className={palette.leftCell}>{instrument.competence}</td>
               </tr>
               <tr>
-                <th className="border border-cyan-400/15 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-200">
-                  Capacidad
-                </th>
-                <td className="border border-cyan-400/15 px-4 py-3 align-top text-sm text-slate-200">
-                  <ul className="list-disc pl-5 leading-7">
+                <th className={palette.leftLabel}>Capacidad</th>
+                <td className={`${palette.leftCell} ${isExport ? "text-[13px]" : ""}`}>
+                  <ul className={isExport ? "list-disc pl-5 leading-6" : "list-disc pl-5 leading-7"}>
                     {instrument.capacities.map((capacity) => (
                       <li key={capacity}>{capacity}</li>
                     ))}
@@ -166,23 +241,16 @@ export function InstrumentBuilder({
                 </td>
               </tr>
               <tr>
-                <th className="border border-cyan-400/15 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-200">
-                  Desempeño precisado
-                </th>
-                <td className="border border-cyan-400/15 px-4 py-3 align-top text-sm leading-7 text-slate-200">
-                  {instrument.performance}
-                </td>
+                <th className={palette.leftLabel}>Desempeño precisado</th>
+                <td className={palette.leftCell}>{instrument.performance}</td>
               </tr>
             </tbody>
           </table>
 
           <table className="border-collapse text-sm">
             <thead>
-              <tr className="bg-cyan-400/10">
-                <th
-                  colSpan={instrument.criteria.length}
-                  className="border border-cyan-400/20 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.12em] text-cyan-100"
-                >
+              <tr className={palette.sectionTitleBg}>
+                <th colSpan={instrument.criteria.length} className={palette.sectionTitle}>
                   Criterios de evaluación
                 </th>
               </tr>
@@ -190,10 +258,7 @@ export function InstrumentBuilder({
             <tbody>
               <tr>
                 {instrument.criteria.map((criterion) => (
-                  <td
-                    key={criterion.id}
-                    className="w-[14rem] border border-cyan-400/15 px-4 py-4 align-top text-sm leading-8 text-slate-200"
-                  >
+                  <td key={criterion.id} className={palette.criteriaCell}>
                     {criterion.description}
                   </td>
                 ))}
@@ -204,35 +269,23 @@ export function InstrumentBuilder({
 
         <table className="min-w-[1100px] border-collapse text-sm">
           <thead>
-            <tr className="bg-slate-900">
-              <th className="w-16 border border-cyan-400/20 px-3 py-3 text-center text-sm font-semibold text-white">N°</th>
-              <th className="w-[28rem] border border-cyan-400/20 px-4 py-3 text-left text-lg font-semibold uppercase tracking-[0.05em] text-white">
-                Nombres y apellidos
-              </th>
+            <tr className={palette.bottomHeader}>
+              <th className={palette.numberHeader}>N°</th>
+              <th className={palette.studentHeader}>Nombres y apellidos</th>
               {instrument.criteria.map((criterion) => (
-                <th
-                  key={criterion.id}
-                  colSpan={2}
-                  className="border border-cyan-400/20 px-3 py-3 text-center text-[11px] font-semibold uppercase leading-5 tracking-[0.04em] text-slate-100"
-                >
+                <th key={criterion.id} colSpan={2} className={palette.bottomHeaderCell}>
                   {criterion.title}
                 </th>
               ))}
             </tr>
-            <tr className="bg-cyan-400/10 text-xs font-semibold uppercase text-cyan-100">
-              <th className="border border-cyan-400/15 px-3 py-2" />
-              <th className="border border-cyan-400/15 px-3 py-2" />
+            <tr className={palette.yesNoRow}>
+              <th className={palette.yesNoCell} />
+              <th className={palette.yesNoCell} />
               {instrument.criteria.flatMap((criterion) => [
-                <th
-                  key={`${criterion.id}-si`}
-                  className="w-14 border border-cyan-400/15 px-2 py-2 text-center"
-                >
+                <th key={`${criterion.id}-si`} className={palette.yesNoCell}>
                   Si
                 </th>,
-                <th
-                  key={`${criterion.id}-no`}
-                  className="w-14 border border-cyan-400/15 px-2 py-2 text-center"
-                >
+                <th key={`${criterion.id}-no`} className={palette.yesNoCell}>
                   No
                 </th>,
               ])}
@@ -240,25 +293,15 @@ export function InstrumentBuilder({
           </thead>
           <tbody>
             {rows.map((row, index) => (
-              <tr key={row.key} className="bg-slate-950/70">
-                <td className="border border-cyan-400/15 px-3 py-3 text-sm font-semibold text-slate-200">
-                  {index + 1}.
-                </td>
-                <td className="border border-cyan-400/15 px-4 py-3 text-sm font-medium uppercase tracking-[0.02em] text-slate-100">
-                  {row.studentName || " "}
-                </td>
+              <tr key={row.key} className={palette.bodyRow}>
+                <td className={palette.numberCell}>{index + 1}.</td>
+                <td className={palette.studentCell}>{row.studentName || " "}</td>
                 {instrument.criteria.flatMap((criterion) => [
-                  <td
-                    key={`${criterion.id}-row-${index}-si`}
-                    className="border border-cyan-400/15 px-3 py-3 text-center"
-                  >
-                    {renderMark(getCriterionMark(instrument, row.attempt, criterion.id), "si")}
+                  <td key={`${criterion.id}-row-${index}-si`} className={palette.markCell}>
+                    {renderMark(getCriterionMark(instrument, row.attempt, criterion.id), "si", variant)}
                   </td>,
-                  <td
-                    key={`${criterion.id}-row-${index}-no`}
-                    className="border border-cyan-400/15 px-3 py-3 text-center"
-                  >
-                    {renderMark(getCriterionMark(instrument, row.attempt, criterion.id), "no")}
+                  <td key={`${criterion.id}-row-${index}-no`} className={palette.markCell}>
+                    {renderMark(getCriterionMark(instrument, row.attempt, criterion.id), "no", variant)}
                   </td>,
                 ])}
               </tr>

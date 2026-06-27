@@ -3,11 +3,12 @@ import Link from "next/link";
 import { InstrumentBuilder } from "@/components/admin/instrument-builder";
 import { SiteHeader } from "@/components/layout/site-header";
 import { requireAdmin } from "@/lib/auth";
-import { listInstruments } from "@/lib/data-store";
+import { listAttempts, listInstruments } from "@/lib/data-store";
 
 export default async function InstrumentosPage() {
   await requireAdmin();
   const instrument = listInstruments()[0];
+  const attempts = (await listAttempts()).filter((attempt) => attempt.instrumentId === instrument.id);
 
   return (
     <div className="min-h-screen">
@@ -20,15 +21,23 @@ export default async function InstrumentosPage() {
             </p>
             <h1 className="mt-4 text-5xl text-white">Lista de cotejos administrable</h1>
           </div>
-          <Link
-            href="/admin/instrumentos/nuevo"
-            className="rounded-full bg-cyan-300 px-4 py-2 font-medium text-slate-950"
-          >
-            Nuevo instrumento
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/admin/instrumentos/${instrument.id}/exportar`}
+              className="rounded-full border border-cyan-300/40 px-4 py-2 font-medium text-cyan-100"
+            >
+              Exportar formato
+            </Link>
+            <Link
+              href="/admin/instrumentos/nuevo"
+              className="rounded-full bg-cyan-300 px-4 py-2 font-medium text-slate-950"
+            >
+              Nuevo instrumento
+            </Link>
+          </div>
         </section>
 
-        <InstrumentBuilder instrument={instrument} />
+        <InstrumentBuilder instrument={instrument} attempts={attempts.slice(0, 10)} showTemplateRows={false} />
       </main>
     </div>
   );
