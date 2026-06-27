@@ -214,15 +214,7 @@ export const sessions: EvaluationSession[] = [
     label: "Sesión activa de exposición argumentativa",
     active: true,
     startedAt: "2026-06-27T08:00:00.000Z",
-  },
-  {
-    id: "sesion-comprension-1",
-    instrumentId: "instrumento-comprension-lectora",
-    code: "LECTURA-10",
-    label: "Sesión demostrativa de comprensión lectora",
-    active: true,
-    startedAt: "2026-06-27T08:00:00.000Z",
-  },
+  }
 ];
 
 export function getInstrumentById(id: string) {

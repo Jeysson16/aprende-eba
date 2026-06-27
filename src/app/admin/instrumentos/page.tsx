@@ -20,8 +20,11 @@ export default async function InstrumentosPage() {
             </p>
             <h1 className="mt-4 text-5xl text-white">Lista de cotejos administrable</h1>
           </div>
-          <Link href="/admin/instrumentos/nuevo" className="rounded-full bg-cyan-300 px-4 py-2 font-medium text-slate-950">
-            Ver plantilla editable
+          <Link
+            href="/admin/instrumentos/nuevo"
+            className="rounded-full bg-cyan-300 px-4 py-2 font-medium text-slate-950"
+          >
+            Nuevo instrumento
           </Link>
         </section>
 

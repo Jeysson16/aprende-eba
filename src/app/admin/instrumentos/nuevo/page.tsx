@@ -1,8 +1,11 @@
+import { InstrumentBuilder } from "@/components/admin/instrument-builder";
 import { SiteHeader } from "@/components/layout/site-header";
 import { requireAdmin } from "@/lib/auth";
+import { listInstruments } from "@/lib/data-store";
 
 export default async function NuevoInstrumentoPage() {
   await requireAdmin();
+  const instrument = listInstruments()[0];
 
   return (
     <div className="min-h-screen">
@@ -12,13 +15,10 @@ export default async function NuevoInstrumentoPage() {
           <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/70">
             Vista de creación
           </p>
-          <h1 className="mt-4 text-5xl text-white">Plantilla para nuevos instrumentos</h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300">
-            Esta primera versión deja visible la estructura que seguirá un CRUD real:
-            datos informativos, propósito, competencia, criterios, preguntas y reglas de
-            retroalimentación. El instrumento semilla ya se carga desde el repositorio.
-          </p>
+          <h1 className="mt-4 text-5xl text-white">Nuevo instrumento</h1>
         </section>
+
+        <InstrumentBuilder instrument={instrument} />
       </main>
     </div>
   );

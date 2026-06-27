@@ -4,6 +4,7 @@ import { AttemptsTable } from "@/components/admin/attempts-table";
 import { DashboardStats } from "@/components/admin/dashboard-stats";
 import { SessionPublisher } from "@/components/admin/session-publisher";
 import { CriteriaPerformanceChart } from "@/components/admin/charts/criteria-performance-chart";
+import { InstrumentBuilder } from "@/components/admin/instrument-builder";
 import { SiteHeader } from "@/components/layout/site-header";
 import { requireAdmin, signOutAdmin } from "@/lib/auth";
 import { getDashboardStats, listAttempts, listInstruments, listSessions } from "@/lib/data-store";
@@ -14,6 +15,9 @@ export default async function AdminDashboardPage() {
   const [stats, attempts] = await Promise.all([getDashboardStats(), listAttempts()]);
   const sessions = listSessions();
   const firstInstrument = listInstruments()[0];
+  const studentNames = Array.from(
+    new Set(attempts.map((attempt) => attempt.student.fullName.trim()).filter(Boolean)),
+  ).slice(0, 10);
 
   const criteriaChart = firstInstrument.criteria.map((criterion) => {
     const source = attempts.flatMap((attempt) => attempt.criteriaResults);
@@ -62,6 +66,8 @@ export default async function AdminDashboardPage() {
           <CriteriaPerformanceChart items={criteriaChart} />
           <SessionPublisher sessions={sessions} />
         </section>
+
+        <InstrumentBuilder instrument={firstInstrument} studentNames={studentNames} />
 
         <AttemptsTable attempts={attempts} />
       </main>
