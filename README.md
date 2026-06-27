@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Instrumento digital de evaluación formativa
 
-## Getting Started
+Aplicación web orientada a estudiantes de EBA/CEBA y docentes administradores. Permite aplicar una lista de cotejo digital, registrar respuestas, visualizar resultados y generar retroalimentación automatizada con Gemini o mediante reglas locales de respaldo.
 
-First, run the development server:
+## Stack recomendado
+
+- `Next.js` con App Router
+- `TypeScript`
+- `Tailwind CSS`
+- `Gemini API` para retroalimentación automática
+- `Supabase` para persistencia opcional en despliegue real
+- fallback local sin IA ni base externa para demostración y desarrollo
+
+## Variables de entorno
+
+Copia `.env.example` a `.env.local` y completa lo necesario:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Variables principales:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `GEMINI_API_KEY`: habilita la retroalimentación con Gemini.
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`: habilitan persistencia en Supabase.
+- Si completas `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`, el login docente también puede autenticarse contra `Supabase Auth`.
+- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_SECRET`: acceso del panel docente.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Si no configuras Gemini o Supabase, la app sigue funcionando con retroalimentación local y almacenamiento en memoria para fines de demostración.
 
-## Learn More
+## Desarrollo local
 
-To learn more about Next.js, take a look at the following resources:
+Instala dependencias y ejecuta:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Abre [http://localhost:3000](http://localhost:3000).
 
-## Deploy on Vercel
+Credenciales demo del panel docente:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- correo: `docente@ceba.edu.pe`
+- contraseña: `Docente123`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Si configuras `Supabase Auth`, puedes iniciar sesión con un usuario administrador real creado en tu proyecto de Supabase.
+
+## Rutas principales
+
+- `/`: portada institucional
+- `/ingresar`: acceso del estudiante por código
+- `/sesion/EBA-URUBAMBA-2026`: instrumento de evaluación
+- `/admin/login`: ingreso docente
+- `/admin`: dashboard administrativo
+
+## Despliegue en Vercel
+
+1. Sube el proyecto a GitHub.
+2. Importa el repositorio en [Vercel](https://vercel.com).
+3. Configura variables de entorno desde el panel.
+4. Si usarás persistencia real, crea el proyecto en Supabase y ejecuta el esquema de `supabase/migrations/001_initial_schema.sql`.
+
+## Documentación
+
+- `docs/informe-tecnico.md`
+- `docs/arquitectura-funcional.md`
+- `.trae/documents/plan-instrumento-evaluacion-chatbot-vercel.md`
+
+## Nota sobre IA
+
+La mejor opción para este proyecto es `Gemini API + reglas locales`. La IA mejora la personalización de la retroalimentación, mientras que las reglas garantizan continuidad cuando falte conexión, cuota o clave API.
