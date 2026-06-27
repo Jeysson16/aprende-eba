@@ -181,92 +181,90 @@ export function InstrumentBuilder({
       ) : null}
 
       <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse text-sm">
+        <table className="min-w-[980px] w-full border-collapse text-sm">
           <tbody>
             <tr className={palette.infoRow}>
-              <th colSpan={2} className={`${palette.infoBorder} px-4 py-3 text-left text-sm tracking-[0.18em]`}>
+              <th
+                colSpan={2 + instrument.criteria.length * 2}
+                className={`${palette.infoBorder} px-4 py-3 text-left text-sm tracking-[0.18em]`}
+              >
                 Datos informativos
               </th>
             </tr>
             <tr>
-              <td className={`${palette.softBorder} w-1/2 px-4 py-3 align-top text-sm`}>
+              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm`} colSpan={4}>
                 <span className={isExport ? "font-black" : "font-semibold text-white"}>Profesora:</span>{" "}
                 {instrument.teacher}
               </td>
-              <td className={`${palette.softBorder} w-1/2 px-4 py-3 align-top text-sm`}>
+              <td
+                className={`${palette.softBorder} px-4 py-3 align-top text-sm`}
+                colSpan={2 + instrument.criteria.length * 2 - 4}
+              >
                 <span className={isExport ? "font-black" : "font-semibold text-white"}>Fecha:</span>{" "}
                 {formatInstrumentDate(instrument.date)}
               </td>
             </tr>
             <tr>
-              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm`}>
+              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm`} colSpan={4}>
                 <span className={isExport ? "font-black" : "font-semibold text-white"}>Nivel:</span>{" "}
                 {instrument.level.toLowerCase()}
               </td>
-              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm`}>
+              <td
+                className={`${palette.softBorder} px-4 py-3 align-top text-sm`}
+                colSpan={2 + instrument.criteria.length * 2 - 4}
+              >
                 <span className={isExport ? "font-black" : "font-semibold text-white"}>Unidad:</span>{" "}
                 {instrument.unit}
               </td>
             </tr>
             <tr>
-              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm leading-6`}>
+              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm leading-6`} colSpan={4}>
                 <span className={isExport ? "font-black" : "font-semibold text-white"}>Sesión:</span>{" "}
                 &quot;{instrument.sessionTitle}&quot;
               </td>
-              <td className={`${palette.softBorder} px-4 py-3 align-top text-sm`}>
+              <td
+                className={`${palette.softBorder} px-4 py-3 align-top text-sm`}
+                colSpan={2 + instrument.criteria.length * 2 - 4}
+              >
                 <span className={isExport ? "font-black" : "font-semibold text-white"}>Modalidad:</span>{" "}
                 {instrument.modality.toUpperCase()}
               </td>
             </tr>
-          </tbody>
-        </table>
-
-        <div className="min-w-[980px]">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className={palette.sectionTitleBg}>
-                <th colSpan={2} className={palette.sectionTitle}>
-                  Propósitos de aprendizaje
-                </th>
-                <th colSpan={instrument.criteria.length * 2} className={palette.sectionTitle}>
-                  Criterios de evaluación
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th className={palette.leftLabel}>Propósito</th>
-                <td className={palette.leftCell}>{instrument.purpose}</td>
-                {instrument.criteria.map((criterion) => (
-                  <td key={criterion.id} colSpan={2} rowSpan={4} className={palette.criteriaCell}>
-                    {criterion.description}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <th className={palette.leftLabel}>Competencia</th>
-                <td className={palette.leftCell}>{instrument.competence}</td>
-              </tr>
-              <tr>
-                <th className={palette.leftLabel}>Capacidad</th>
-                <td className={`${palette.leftCell} ${isExport ? "text-[13px]" : ""}`}>
-                  <ul className={isExport ? "list-disc pl-5 leading-6" : "list-disc pl-5 leading-7"}>
-                    {instrument.capacities.map((capacity) => (
-                      <li key={capacity}>{capacity}</li>
-                    ))}
-                  </ul>
+            <tr className={palette.sectionTitleBg}>
+              <th colSpan={2} className={palette.sectionTitle}>
+                Propósitos de aprendizaje
+              </th>
+              <th colSpan={instrument.criteria.length * 2} className={palette.sectionTitle}>
+                Criterios de evaluación
+              </th>
+            </tr>
+            <tr>
+              <th className={palette.leftLabel}>Propósito</th>
+              <td className={palette.leftCell}>{instrument.purpose}</td>
+              {instrument.criteria.map((criterion) => (
+                <td key={criterion.id} colSpan={2} rowSpan={4} className={palette.criteriaCell}>
+                  {criterion.description}
                 </td>
-              </tr>
-              <tr>
-                <th className={palette.leftLabel}>Desempeño precisado</th>
-                <td className={palette.leftCell}>{instrument.performance}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <table className="min-w-[980px] border-collapse text-sm">
-          <thead>
+              ))}
+            </tr>
+            <tr>
+              <th className={palette.leftLabel}>Competencia</th>
+              <td className={palette.leftCell}>{instrument.competence}</td>
+            </tr>
+            <tr>
+              <th className={palette.leftLabel}>Capacidad</th>
+              <td className={`${palette.leftCell} ${isExport ? "text-[13px]" : "text-[0.95rem]"}`}>
+                <ul className={isExport ? "list-disc pl-5 leading-6" : "list-disc pl-5 leading-7"}>
+                  {instrument.capacities.map((capacity) => (
+                    <li key={capacity}>{capacity}</li>
+                  ))}
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <th className={palette.leftLabel}>Desempeño precisado</th>
+              <td className={palette.leftCell}>{instrument.performance}</td>
+            </tr>
             <tr className={palette.yesNoRow}>
               <th className={palette.numberHeader}>N°</th>
               <th className={palette.studentHeader}>Nombres y apellidos</th>
@@ -279,8 +277,6 @@ export function InstrumentBuilder({
                 </th>,
               ])}
             </tr>
-          </thead>
-          <tbody>
             {rows.map((row, index) => (
               <tr key={row.key} className={palette.bodyRow}>
                 <td className={palette.numberCell}>{index + 1}.</td>
