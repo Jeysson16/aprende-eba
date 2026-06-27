@@ -2,6 +2,8 @@ import { buildFallbackFeedback } from "@/lib/feedback/rules";
 import { buildGeminiPrompt } from "@/lib/feedback/prompt";
 import type { AttemptRecord, FeedbackReport, Instrument } from "@/lib/types";
 
+const GEMINI_TIMEOUT_MS = 4500;
+
 function sanitizeJsonBlock(text: string) {
   const cleaned = text.trim().replace(/^```json/, "").replace(/```$/, "");
   const firstBrace = cleaned.indexOf("{");
@@ -22,14 +24,17 @@ export async function generateFeedback(
   }
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-goog-api-key": apiKey,
         },
+        signal: controller.signal,
         body: JSON.stringify({
           contents: [
             {
@@ -37,12 +42,14 @@ export async function generateFeedback(
             },
           ],
           generationConfig: {
-            temperature: 0.5,
+            temperature: 0.3,
+            maxOutputTokens: 300,
             responseMimeType: "application/json",
           },
         }),
       },
     );
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       return buildFallbackFeedback(attempt);

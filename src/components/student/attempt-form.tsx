@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import type { Instrument } from "@/lib/types";
+import type { AttemptRecord, Instrument } from "@/lib/types";
 
 type AttemptFormProps = {
   instrument: Instrument;
@@ -44,12 +44,23 @@ export function AttemptForm({ instrument, sessionCode }: AttemptFormProps) {
       }),
     });
 
-    const data = (await response.json()) as { attemptId?: string; message?: string };
+    const data = (await response.json()) as {
+      attemptId?: string;
+      message?: string;
+      attempt?: AttemptRecord;
+    };
 
     if (!response.ok || !data.attemptId) {
       setError(data.message ?? "No se pudo registrar tu respuesta.");
       setLoading(false);
       return;
+    }
+
+    if (data.attempt) {
+      window.sessionStorage.setItem(
+        `attempt:${data.attemptId}`,
+        JSON.stringify(data.attempt),
+      );
     }
 
     router.push(`/sesion/${sessionCode}/resultado/${data.attemptId}`);

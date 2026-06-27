@@ -21,7 +21,11 @@ export async function POST(request: Request) {
 
   try {
     const attempt = await createStudentAttempt(parsed.data);
-    return NextResponse.json({ attemptId: attempt.id, percentage: attempt.percentage });
+    return NextResponse.json({
+      attemptId: attempt.id,
+      percentage: attempt.percentage,
+      attempt,
+    });
   } catch (error) {
     return NextResponse.json(
       {
