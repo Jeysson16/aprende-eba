@@ -1,19 +1,28 @@
+"use client";
+
 import {
   BookOpenCheck,
   Bot,
   CircleAlert,
+  SendHorizonal,
   MessageSquareMore,
   Sparkles,
   TrendingUp,
   User,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 import { titleCaseLevel } from "@/lib/utils";
 import type { AttemptRecord } from "@/lib/types";
 
 type FeedbackCardProps = {
   attempt: AttemptRecord;
+};
+
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
 };
 
 type BubbleProps = {
@@ -66,8 +75,101 @@ function Bubble({ icon, title, children, align = "left" }: BubbleProps) {
   );
 }
 
+function createInitialAssistantMessage(attempt: AttemptRecord): ChatMessage {
+  return {
+    id: `assistant-welcome-${attempt.id}`,
+    role: "assistant",
+    content: `Puedes contarme qué pasó en la sesión, decirme si no entendiste alguna parte de tu retroalimentación o preguntarme por una pregunta específica. Ya revisé tu resultado general y puedo orientarte mejor a partir de eso.`,
+  };
+}
+
 export function FeedbackCard({ attempt }: FeedbackCardProps) {
   const questionFeedback = attempt.feedback.questionFeedback ?? [];
+  const messageIdRef = useRef(0);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    createInitialAssistantMessage(attempt),
+  ]);
+  const [draft, setDraft] = useState("");
+  const [loadingReply, setLoadingReply] = useState(false);
+  const [chatError, setChatError] = useState("");
+
+  function createMessage(role: ChatMessage["role"], content: string): ChatMessage {
+    const id = `${role}-${messageIdRef.current}`;
+    messageIdRef.current += 1;
+    return { id, role, content };
+  }
+
+  const suggestedPrompts = [
+    "Te cuento lo que pasó en la sesión.",
+    "No entendí bien esta retroalimentación, explícamela.",
+    questionFeedback.length > 0
+      ? `Explícame la pregunta 1 y cómo puedo mejorarla.`
+      : "¿Qué debo mejorar primero para el siguiente intento?",
+  ];
+
+  async function sendMessage(content: string) {
+    const message = content.trim();
+    if (!message || loadingReply) {
+      return;
+    }
+
+    const userMessage = createMessage("user", message);
+    const nextHistory = [...chatMessages, userMessage].map((item) => ({
+      role: item.role,
+      content: item.content,
+    }));
+
+    setDraft("");
+    setChatError("");
+    setChatMessages((current) => [...current, userMessage]);
+    setLoadingReply(true);
+
+    try {
+      const response = await fetch(`/api/public/feedback/${attempt.id}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message,
+          history: nextHistory,
+        }),
+      });
+
+      const data = (await response.json()) as { reply?: string; message?: string };
+
+      if (!response.ok || !data.reply) {
+        throw new Error(data.message ?? "No se pudo generar la respuesta del tutor virtual.");
+      }
+
+      const assistantReply = data.reply;
+      setChatMessages((current) => [
+        ...current,
+        createMessage("assistant", assistantReply),
+      ]);
+    } catch (error) {
+      const fallbackMessage =
+        error instanceof Error
+          ? error.message
+          : "Hubo un problema al responder tu mensaje. Inténtalo nuevamente.";
+
+      setChatError(fallbackMessage);
+      setChatMessages((current) => [
+        ...current,
+        createMessage(
+          "assistant",
+          "No pude procesar bien tu mensaje en este momento. Vuelve a intentarlo o reformula lo que pasó en la sesión para ayudarte mejor.",
+        ),
+      ]);
+    } finally {
+      setLoadingReply(false);
+    }
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void sendMessage(draft);
+  }
 
   return (
     <section className="grid gap-6 lg:grid-cols-[1.18fr_0.82fr]">
@@ -132,6 +234,77 @@ export function FeedbackCard({ attempt }: FeedbackCardProps) {
             <p>{attempt.feedback.nextStep}</p>
           </Bubble>
         </div>
+
+        <article className="mt-6 rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
+          <p className="flex items-center gap-2 text-sm font-medium text-cyan-200">
+            <MessageSquareMore className="size-4" />
+            Conversa con el tutor virtual
+          </p>
+          <p className="mt-3 text-sm leading-7 text-slate-300">
+            Escribe qué pasó en la sesión, qué parte no entendiste o qué pregunta quieres
+            revisar.
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {suggestedPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => void sendMessage(prompt)}
+                disabled={loadingReply}
+                className="rounded-full border border-white/10 bg-slate-950/60 px-3 py-2 text-xs text-slate-200 transition hover:border-cyan-300/40 disabled:opacity-60"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-5 space-y-3 rounded-[1.5rem] border border-white/10 bg-slate-950/50 p-4">
+            {chatMessages.map((message) => (
+              <Bubble
+                key={message.id}
+                icon={
+                  message.role === "assistant" ? (
+                    <Bot className="size-5" />
+                  ) : (
+                    <User className="size-5" />
+                  )
+                }
+                title={message.role === "assistant" ? "Tutor virtual" : "Tú"}
+                align={message.role === "assistant" ? "left" : "right"}
+              >
+                <p>{message.content}</p>
+              </Bubble>
+            ))}
+
+            {loadingReply ? (
+              <Bubble icon={<Bot className="size-5" />} title="Tutor virtual">
+                <p>Estoy leyendo lo que me contaste para responderte con base en tu sesión...</p>
+              </Bubble>
+            ) : null}
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+            <textarea
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              rows={3}
+              placeholder="Ejemplo: En la sesión me puse nervioso al argumentar y no entendí por qué me faltó sustento."
+              className="w-full rounded-[1.5rem] border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300"
+            />
+            {chatError ? <p className="text-sm text-amber-300">{chatError}</p> : null}
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={loadingReply || !draft.trim()}
+                className="inline-flex items-center gap-2 rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:opacity-60"
+              >
+                <SendHorizonal className="size-4" />
+                Enviar al tutor
+              </button>
+            </div>
+          </form>
+        </article>
       </div>
 
       <div className="space-y-4">
@@ -141,11 +314,21 @@ export function FeedbackCard({ attempt }: FeedbackCardProps) {
             <div className="rounded-[1.25rem] border border-white/10 bg-slate-950/50 p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Mensajes</p>
               <p className="mt-2 text-2xl font-semibold text-white">
-                {questionFeedback.length + 7}
+                {questionFeedback.length + 7 + chatMessages.length}
               </p>
             </div>
             <div className="rounded-[1.25rem] border border-white/10 bg-slate-950/50 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Preguntas con feedback</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                Comentarios del estudiante
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {chatMessages.filter((message) => message.role === "user").length}
+              </p>
+            </div>
+            <div className="rounded-[1.25rem] border border-white/10 bg-slate-950/50 p-4 sm:col-span-2">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                Preguntas con feedback
+              </p>
               <p className="mt-2 text-2xl font-semibold text-white">{questionFeedback.length}</p>
             </div>
           </div>
