@@ -4,6 +4,7 @@ import type {
   CriterionResult,
   FeedbackReport,
   Instrument,
+  QuestionFeedback,
   Question,
   RubricLevel,
 } from "@/lib/types";
@@ -47,6 +48,73 @@ function performanceVerb(percentage: number) {
   if (percentage >= 70) return "muestras un avance adecuado";
   if (percentage >= 50) return "todavía necesitas consolidar";
   return "requiere una atención prioritaria";
+}
+
+function getCriterionTitle(instrument: Instrument | undefined, criterionId: string) {
+  return (
+    instrument?.criteria.find((criterion) => criterion.id === criterionId)?.title ??
+    "este criterio"
+  );
+}
+
+function getQuestionScore(question: Question, answer: string) {
+  if (question.type === "textarea") {
+    return normalizeTextareaScore(answer);
+  }
+
+  const option = question.options?.find((item) => item.value === answer);
+  return option?.score ?? 0;
+}
+
+function getAnswerText(question: Question, answer: string) {
+  if (!answer.trim()) {
+    return "Sin respuesta";
+  }
+
+  if (question.type === "single") {
+    const option = question.options?.find((item) => item.value === answer);
+    return option?.label ?? answer;
+  }
+
+  return excerpt(answer, 180);
+}
+
+function buildSingleQuestionFeedback(
+  question: Question,
+  criterionTitle: string,
+  answerText: string,
+  score: number,
+) {
+  const normalizedAnswer = answerText.toLowerCase();
+  const criterion = criterionTitle.toLowerCase();
+
+  if (score >= question.maxScore) {
+    return `Marcaste "${normalizedAnswer}" en esta pregunta y eso evidencia un buen dominio en ${criterion}. Mantén ese nivel explicando con seguridad por qué lograste este desempeño.`;
+  }
+
+  if (score > 0) {
+    return `Marcaste "${normalizedAnswer}", lo que muestra un avance parcial en ${criterion}. Para mejorar, revisa qué parte del criterio aún no cumples por completo y busca un ejemplo concreto antes del siguiente intento.`;
+  }
+
+  return `Marcaste "${normalizedAnswer}" y eso indica que ${criterion} todavía necesita refuerzo. Antes del siguiente intento, revisa un modelo breve y practica cómo aplicar este criterio en una situación similar.`;
+}
+
+function buildTextareaQuestionFeedback(
+  criterionTitle: string,
+  answer: string,
+  score: number,
+) {
+  const criterion = criterionTitle.toLowerCase();
+
+  if (!answer.trim()) {
+    return `No agregaste una respuesta desarrollada en esta pregunta. Es importante escribir una idea breve y concreta para mostrar mejor tu avance en ${criterion}.`;
+  }
+
+  if (score >= 2) {
+    return `Tu respuesta escrita aporta una evidencia clara de reflexión sobre ${criterion}. Sigue desarrollando ejemplos o explicaciones concretas, porque eso fortalece mucho más tu autoevaluación.`;
+  }
+
+  return `Tu respuesta escrita muestra una idea inicial sobre ${criterion}, pero todavía puede ser más precisa. En el siguiente intento, agrega un ejemplo, una dificultad específica o una acción de mejora para sustentar mejor tu respuesta.`;
 }
 
 function getRelatedQuestions(instrument: Instrument | undefined, criterionId: string) {
@@ -139,6 +207,32 @@ export function buildCriterionResults(
   });
 }
 
+export function buildQuestionFeedback(
+  attempt: Omit<AttemptRecord, "feedback">,
+  instrument: Instrument,
+): QuestionFeedback[] {
+  return instrument.questions.map((question) => {
+    const answer = attempt.answers[question.id] ?? "";
+    const criterionTitle = getCriterionTitle(instrument, question.criterionId);
+    const score = getQuestionScore(question, answer);
+    const answerText = getAnswerText(question, answer);
+    const feedback =
+      question.type === "single"
+        ? buildSingleQuestionFeedback(question, criterionTitle, answerText, score)
+        : buildTextareaQuestionFeedback(criterionTitle, answer, score);
+
+    return {
+      questionId: question.id,
+      questionPrompt: question.prompt,
+      criterionTitle,
+      answerText,
+      feedback,
+      score,
+      maxScore: question.maxScore,
+    };
+  });
+}
+
 export function buildFallbackFeedback(
   attempt: Omit<AttemptRecord, "feedback">,
   providedInstrument?: Instrument,
@@ -178,6 +272,7 @@ export function buildFallbackFeedback(
       ? `La principal dificultad aparece en ${weakest.title.toLowerCase()}, porque este criterio exige demostrar la competencia con mayor claridad, sustento y organización.`
       : "Tus respuestas muestran aspectos a reforzar en el siguiente intento.",
     studyRecommendation,
+    questionFeedback: instrument ? buildQuestionFeedback(attempt, instrument) : [],
     nextStep: weakest
       ? `Antes de repetir el formulario, revisa un ejemplo breve del criterio ${weakest.title.toLowerCase()}, toma notas de lo que te faltó y vuelve a intentarlo aplicando esa mejora.`
       : "Repite la actividad aplicando la retroalimentación recibida.",

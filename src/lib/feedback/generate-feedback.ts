@@ -1,9 +1,9 @@
-import { buildFallbackFeedback } from "@/lib/feedback/rules";
+import { buildFallbackFeedback, buildQuestionFeedback } from "@/lib/feedback/rules";
 import { buildGeminiPrompt } from "@/lib/feedback/prompt";
 import type { AttemptRecord, FeedbackReport, Instrument } from "@/lib/types";
 import { z } from "zod";
 
-const GEMINI_TIMEOUT_MS = 7000;
+const GEMINI_TIMEOUT_MS = 9000;
 const GEMINI_MODELS = [
   "gemini-2.5-flash-lite",
   "gemini-flash-latest",
@@ -17,6 +17,20 @@ const feedbackSchema = z.object({
   explanation: z.string().trim().min(12),
   studyRecommendation: z.string().trim().min(12),
   nextStep: z.string().trim().min(12),
+  questionFeedback: z
+    .array(
+      z.object({
+        questionId: z.string().trim().min(1),
+        questionPrompt: z.string().trim().min(6),
+        criterionTitle: z.string().trim().min(3).optional(),
+        answerText: z.string().trim().min(1),
+        feedback: z.string().trim().min(12),
+        score: z.number().int().min(0).optional(),
+        maxScore: z.number().int().positive().optional(),
+      }),
+    )
+    .max(20)
+    .optional(),
 });
 
 function sanitizeJsonBlock(text: string) {
@@ -28,7 +42,16 @@ function sanitizeJsonBlock(text: string) {
     : cleaned;
 }
 
-function normalizeFeedback(parsed: z.infer<typeof feedbackSchema>): FeedbackReport {
+function normalizeFeedback(
+  parsed: z.infer<typeof feedbackSchema>,
+  instrument: Instrument,
+  attempt: Omit<AttemptRecord, "feedback">,
+): FeedbackReport {
+  const fallbackQuestionFeedback = buildQuestionFeedback(attempt, instrument);
+  const fallbackMap = new Map(
+    fallbackQuestionFeedback.map((item) => [item.questionId, item]),
+  );
+
   return {
     summary: parsed.summary,
     strengths: parsed.strengths.slice(0, 2),
@@ -36,6 +59,19 @@ function normalizeFeedback(parsed: z.infer<typeof feedbackSchema>): FeedbackRepo
     explanation: parsed.explanation,
     studyRecommendation: parsed.studyRecommendation,
     nextStep: parsed.nextStep,
+    questionFeedback:
+      parsed.questionFeedback?.map((item) => {
+        const fallback = fallbackMap.get(item.questionId);
+        return {
+          questionId: item.questionId,
+          questionPrompt: item.questionPrompt,
+          criterionTitle: item.criterionTitle ?? fallback?.criterionTitle ?? "Criterio",
+          answerText: item.answerText,
+          feedback: item.feedback,
+          score: item.score ?? fallback?.score ?? 0,
+          maxScore: item.maxScore ?? fallback?.maxScore ?? 1,
+        };
+      }) ?? fallbackQuestionFeedback,
     provider: "gemini",
   };
 }
@@ -72,7 +108,7 @@ export async function generateFeedback(
               ],
               generationConfig: {
                 temperature: 0.35,
-                maxOutputTokens: 700,
+                maxOutputTokens: 1400,
                 responseMimeType: "application/json",
               },
             }),
@@ -101,7 +137,7 @@ export async function generateFeedback(
 
         const parsed = feedbackSchema.safeParse(JSON.parse(sanitizeJsonBlock(text)));
         if (parsed.success) {
-          return normalizeFeedback(parsed.data);
+          return normalizeFeedback(parsed.data, instrument, attempt);
         }
       } catch {
         continue;

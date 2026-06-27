@@ -94,7 +94,8 @@ export function ResultPageClient({
           </p>
           <h1 className="mt-4 text-5xl text-white">{attempt.student.fullName}</h1>
           <p className="mt-3 text-base leading-8 text-slate-300">
-            Esta respuesta se generó a partir de tu autoevaluación y del instrumento digital.
+            Esta retroalimentación se presenta como un chat guiado y toma en cuenta tu
+            autoevaluación, tus respuestas y observaciones adicionales por pregunta.
           </p>
         </div>
         <Link

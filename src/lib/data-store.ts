@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { buildQuestionFeedback } from "@/lib/feedback/rules";
 import { evaluateAttempt } from "@/lib/feedback/scoring";
 import { generateFeedback } from "@/lib/feedback/generate-feedback";
 import {
@@ -9,9 +10,34 @@ import {
   sessions,
 } from "@/lib/pedagogy/seed-instruments";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import type { AttemptRecord, Instrument, StudentProfile } from "@/lib/types";
+import type { AttemptRecord, FeedbackReport, Instrument, StudentProfile } from "@/lib/types";
 
 const memoryAttempts: AttemptRecord[] = [];
+
+function normalizeStoredFeedback(
+  feedback: FeedbackReport,
+  attempt: Omit<AttemptRecord, "feedback">,
+  instrument: Instrument | undefined,
+): FeedbackReport {
+  if (feedback.questionFeedback?.length || !instrument) {
+    return feedback;
+  }
+
+  return {
+    ...feedback,
+    questionFeedback: buildQuestionFeedback(attempt, instrument),
+  };
+}
+
+function normalizeAttemptRecord(record: AttemptRecord): AttemptRecord {
+  const { feedback, ...attempt } = record;
+  const instrument = getInstrumentById(record.instrumentId);
+
+  return {
+    ...attempt,
+    feedback: normalizeStoredFeedback(feedback, attempt, instrument),
+  };
+}
 
 async function createAttemptInSupabase(record: AttemptRecord) {
   const supabase = createServerSupabaseClient();
@@ -48,29 +74,31 @@ async function listAttemptsFromSupabase() {
 
   if (error || !data) return null;
 
-  return data.map<AttemptRecord>((row) => ({
-    id: row.id,
-    sessionCode: row.session_code,
-    instrumentId: row.instrument_id,
-    student: {
-      fullName: row.student_name,
-      section: row.student_section ?? undefined,
-      consentAccepted: Boolean(row.consent_accepted),
-    },
-    answers: row.answers as Record<string, string>,
-    totalScore: row.total_score,
-    maxScore: row.max_score,
-    percentage: row.percentage,
-    level: row.level,
-    createdAt: row.created_at,
-    criteriaResults: row.criteria_results,
-    feedback: row.feedback,
-  }));
+  return data.map<AttemptRecord>((row) =>
+    normalizeAttemptRecord({
+      id: row.id,
+      sessionCode: row.session_code,
+      instrumentId: row.instrument_id,
+      student: {
+        fullName: row.student_name,
+        section: row.student_section ?? undefined,
+        consentAccepted: Boolean(row.consent_accepted),
+      },
+      answers: row.answers as Record<string, string>,
+      totalScore: row.total_score,
+      maxScore: row.max_score,
+      percentage: row.percentage,
+      level: row.level,
+      createdAt: row.created_at,
+      criteriaResults: row.criteria_results,
+      feedback: row.feedback,
+    }),
+  );
 }
 
 export async function listAttempts() {
   const remote = await listAttemptsFromSupabase();
-  return remote ?? memoryAttempts;
+  return remote ?? memoryAttempts.map(normalizeAttemptRecord);
 }
 
 export async function getAttemptById(id: string) {
@@ -128,7 +156,7 @@ export async function createStudentAttempt(input: {
   };
 
   const feedback = await generateFeedback(sessionDetails.instrument, partial);
-  const record: AttemptRecord = { ...partial, feedback };
+  const record: AttemptRecord = normalizeAttemptRecord({ ...partial, feedback });
 
   const storedInSupabase = await createAttemptInSupabase(record);
   if (!storedInSupabase) {

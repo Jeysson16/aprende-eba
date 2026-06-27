@@ -15,10 +15,10 @@ export function buildGeminiPrompt(instrument: Instrument, attempt: Omit<AttemptR
 
       if (question.type === "single") {
         const option = question.options?.find((item) => item.value === value);
-        return `- ${question.prompt}: ${option?.label ?? value}`;
+        return `- ${question.id} | criterio: ${question.criterionId} | pregunta: ${question.prompt} | respuesta: ${option?.label ?? value}`;
       }
 
-      return `- ${question.prompt}: ${value}`;
+      return `- ${question.id} | criterio: ${question.criterionId} | pregunta: ${question.prompt} | respuesta: ${value}`;
     });
 
   return `
@@ -29,7 +29,7 @@ No inventes datos ni hagas diagnósticos psicológicos o clínicos.
 No uses tono sancionador.
 No uses markdown, viñetas con asteriscos, ni bloques de código.
 Entrega un JSON válido con estas claves exactas:
-summary, strengths, improvements, explanation, studyRecommendation, nextStep
+summary, strengths, improvements, explanation, studyRecommendation, nextStep, questionFeedback
 No escribas texto antes ni después del JSON.
 
 Contexto de la sesión:
@@ -60,7 +60,7 @@ ${attempt.criteriaResults
   .join("\n")}
 
 Respuestas del estudiante:
-${answeredQuestions.join("\n")}
+${answeredQuestions.join("\n") || "- Sin respuestas registradas."}
 
 Instrucciones de estilo:
 - Basa cada mensaje en los criterios y respuestas del estudiante, no en frases genéricas.
@@ -70,6 +70,10 @@ Instrucciones de estilo:
 - "explanation": 1 o 2 frases sobre la principal dificultad y por qué importa.
 - "studyRecommendation": 1 recomendación concreta de estudio, relacionada con el criterio más débil.
 - "nextStep": 1 acción inmediata para el siguiente intento.
+- "questionFeedback": arreglo con una entrada por cada pregunta respondida.
+- Cada objeto de "questionFeedback" debe tener exactamente estas claves:
+  questionId, questionPrompt, criterionTitle, answerText, feedback
+- En "questionFeedback", comenta la respuesta real del estudiante y da una sugerencia breve, concreta y formativa para esa pregunta.
 - Evita repetir literalmente los nombres de las claves o del instrumento.
 `.trim();
 }

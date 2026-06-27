@@ -72,6 +72,16 @@ export type CriterionResult = {
   improvements: string[];
 };
 
+export type QuestionFeedback = {
+  questionId: string;
+  questionPrompt: string;
+  criterionTitle: string;
+  answerText: string;
+  feedback: string;
+  score: number;
+  maxScore: number;
+};
+
 export type FeedbackReport = {
   summary: string;
   strengths: string[];
@@ -79,6 +89,7 @@ export type FeedbackReport = {
   explanation: string;
   studyRecommendation: string;
   nextStep: string;
+  questionFeedback?: QuestionFeedback[];
   provider: "gemini" | "reglas";
 };
 
