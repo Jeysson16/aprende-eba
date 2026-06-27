@@ -15,9 +15,9 @@ export default async function AdminDashboardPage() {
   const [stats, attempts] = await Promise.all([getDashboardStats(), listAttempts()]);
   const sessions = listSessions();
   const firstInstrument = listInstruments()[0];
-  const studentNames = Array.from(
-    new Set(attempts.map((attempt) => attempt.student.fullName.trim()).filter(Boolean)),
-  ).slice(0, 10);
+  const instrumentAttempts = attempts
+    .filter((attempt) => attempt.instrumentId === firstInstrument.id)
+    .slice(0, 10);
 
   const criteriaChart = firstInstrument.criteria.map((criterion) => {
     const source = attempts.flatMap((attempt) => attempt.criteriaResults);
@@ -67,7 +67,11 @@ export default async function AdminDashboardPage() {
           <SessionPublisher sessions={sessions} />
         </section>
 
-        <InstrumentBuilder instrument={firstInstrument} studentNames={studentNames} />
+        <InstrumentBuilder
+          instrument={firstInstrument}
+          attempts={instrumentAttempts}
+          showTemplateRows={false}
+        />
 
         <AttemptsTable attempts={attempts} />
       </main>
