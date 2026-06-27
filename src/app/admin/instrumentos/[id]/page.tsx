@@ -26,12 +26,20 @@ export default async function InstrumentDetailPage(props: PageProps<"/admin/inst
             <p className="text-xs uppercase tracking-[0.28em] text-cyan-200/70">Instrumento</p>
             <h1 className="mt-2 text-3xl font-semibold text-white">{instrument.title}</h1>
           </div>
-          <Link
-            href={`/admin/instrumentos/${instrument.id}/exportar`}
-            className="rounded-full bg-cyan-300 px-4 py-2 font-medium text-slate-950"
-          >
-            Abrir formato para exportar
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/api/admin/instruments/${instrument.id}/xlsx`}
+              className="rounded-full border border-emerald-300/40 px-4 py-2 font-medium text-emerald-200"
+            >
+              Descargar XLSX
+            </Link>
+            <Link
+              href={`/admin/instrumentos/${instrument.id}/exportar`}
+              className="rounded-full bg-cyan-300 px-4 py-2 font-medium text-slate-950"
+            >
+              Abrir formato para exportar
+            </Link>
+          </div>
         </section>
 
         <InstrumentBuilder instrument={instrument} attempts={attempts.slice(0, 10)} showTemplateRows={false} />

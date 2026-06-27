@@ -55,6 +55,12 @@ export default async function AdminDashboardPage() {
             >
               Exportar formato
             </Link>
+            <Link
+              href={`/api/admin/instruments/${firstInstrument.id}/xlsx`}
+              className="rounded-full border border-emerald-300/40 px-4 py-2 text-emerald-200"
+            >
+              Descargar XLSX
+            </Link>
             <Link href="/admin/respuestas" className="rounded-full border border-white/10 px-4 py-2 text-slate-100">
               Respuestas
             </Link>

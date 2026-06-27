@@ -21,7 +21,10 @@ export default async function ExportInstrumentPage(
   return (
     <div className="min-h-screen bg-[#f5eee7] px-4 py-6 text-black print:bg-white print:p-0">
       <main className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 print:max-w-none print:gap-0">
-        <PrintInstrumentActions backHref={`/admin/instrumentos/${instrument.id}`} />
+        <PrintInstrumentActions
+          backHref={`/admin/instrumentos/${instrument.id}`}
+          xlsxHref={`/api/admin/instruments/${instrument.id}/xlsx`}
+        />
         <InstrumentBuilder
           instrument={instrument}
           attempts={attempts.slice(0, 10)}

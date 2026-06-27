@@ -132,44 +132,45 @@ export function InstrumentBuilder({
       }
     : {
         section:
-          "overflow-hidden rounded-[2rem] border border-cyan-400/20 bg-slate-950/80 text-slate-100 shadow-[0_20px_60px_rgba(8,47,73,0.35)]",
-        header: "border-b border-cyan-400/20 bg-slate-900/95 px-6 py-5 text-center",
+          "overflow-hidden rounded-[2rem] border border-cyan-400/25 bg-[#010b1d] text-slate-100 shadow-[0_20px_60px_rgba(8,47,73,0.35)]",
+        header: "border-b border-cyan-400/20 bg-[#02142a] px-6 py-5 text-center",
         adminLabel: "text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/75",
         title: "mt-2 text-2xl font-semibold uppercase tracking-[0.08em] text-white",
         subtitle: "text-sm font-medium uppercase tracking-[0.28em] text-slate-300",
-        infoRow: "bg-cyan-400/10 font-semibold uppercase text-cyan-100",
-        infoBorder: "border border-cyan-400/20",
-        softBorder: "border border-cyan-400/15",
+        infoRow: "bg-[#03233f] font-semibold uppercase text-cyan-50",
+        infoBorder: "border border-cyan-500/30",
+        softBorder: "border border-cyan-500/25",
         sectionTitle:
-          "border border-cyan-400/20 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.12em] text-cyan-100",
-        sectionTitleBg: "bg-cyan-400/10",
+          "border border-cyan-500/30 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.12em] text-cyan-50",
+        sectionTitleBg: "bg-[#03233f]",
         leftLabel:
-          "w-32 border border-cyan-400/15 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-200",
-        leftCell: "border border-cyan-400/15 px-4 py-3 align-top text-sm leading-7 text-slate-200",
-        criteriaCell: "w-[14rem] border border-cyan-400/15 px-4 py-4 align-top text-sm leading-8 text-slate-200",
-        bottomHeader: "bg-slate-900",
+          "w-32 border border-cyan-500/25 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-100",
+        leftCell: "border border-cyan-500/25 px-4 py-3 align-top text-sm leading-8 text-slate-100",
+        criteriaCell: "w-[14rem] border border-cyan-500/25 px-4 py-4 align-top text-sm leading-8 text-slate-100",
+        bottomHeader: "bg-[#071a36]",
         bottomHeaderCell:
-          "border border-cyan-400/20 px-3 py-3 text-center text-[11px] font-semibold uppercase leading-5 tracking-[0.04em] text-slate-100",
+          "border border-cyan-500/30 px-2 py-3 text-center text-[10px] font-semibold uppercase leading-5 tracking-[0.04em] text-slate-100",
         studentHeader:
-          "w-[28rem] border border-cyan-400/20 px-4 py-3 text-left text-lg font-semibold uppercase tracking-[0.05em] text-white",
+          "w-[28rem] border border-cyan-500/30 px-4 py-3 text-left text-[1.05rem] font-semibold uppercase tracking-[0.05em] text-white",
         numberHeader:
-          "w-16 border border-cyan-400/20 px-3 py-3 text-center text-sm font-semibold text-white",
-        yesNoRow: "bg-cyan-400/10 text-xs font-semibold uppercase text-cyan-100",
-        yesNoCell: "w-14 border border-cyan-400/15 px-2 py-2 text-center",
-        bodyRow: "bg-slate-950/70",
-        numberCell: "border border-cyan-400/15 px-3 py-3 text-sm font-semibold text-slate-200",
+          "w-16 border border-cyan-500/30 px-3 py-3 text-center text-sm font-semibold text-white",
+        yesNoRow: "bg-[#082241] text-[11px] font-semibold uppercase text-cyan-50",
+        yesNoCell: "w-14 border border-cyan-500/25 px-2 py-2 text-center",
+        bodyRow: "bg-[#010b1d]",
+        numberCell: "border border-cyan-500/25 px-3 py-3 text-sm font-semibold text-slate-100",
         studentCell:
-          "border border-cyan-400/15 px-4 py-3 text-sm font-medium uppercase tracking-[0.02em] text-slate-100",
-        markCell: "border border-cyan-400/15 px-3 py-3 text-center",
+          "border border-cyan-500/25 px-4 py-3 text-sm font-medium uppercase tracking-[0.02em] text-slate-100",
+        markCell: "border border-cyan-500/25 px-2 py-3 text-center align-middle",
       };
 
   return (
     <section className={palette.section}>
-      <div className={palette.header}>
-        {!isExport ? <p className={palette.adminLabel}>Vista del instrumento para administradores</p> : null}
-        <h2 className={palette.title}>Instrumento de evaluación</h2>
-        <p className={palette.subtitle}>Lista de cotejos</p>
-      </div>
+      {isExport ? (
+        <div className={palette.header}>
+          <h2 className={palette.title}>Instrumento de evaluación</h2>
+          <p className={palette.subtitle}>Lista de cotejos</p>
+        </div>
+      ) : null}
 
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse text-sm">
@@ -212,12 +213,15 @@ export function InstrumentBuilder({
           </tbody>
         </table>
 
-        <div className="grid min-w-[1100px] grid-cols-[1.25fr_1.75fr]">
-          <table className="border-collapse text-sm">
+        <div className="min-w-[1100px]">
+          <table className="w-full border-collapse text-sm">
             <thead>
               <tr className={palette.sectionTitleBg}>
                 <th colSpan={2} className={palette.sectionTitle}>
                   Propósitos de aprendizaje
+                </th>
+                <th colSpan={instrument.criteria.length * 2} className={palette.sectionTitle}>
+                  Criterios de evaluación
                 </th>
               </tr>
             </thead>
@@ -225,10 +229,20 @@ export function InstrumentBuilder({
               <tr>
                 <th className={palette.leftLabel}>Propósito</th>
                 <td className={palette.leftCell}>{instrument.purpose}</td>
+                {instrument.criteria.map((criterion) => (
+                  <td key={criterion.id} colSpan={2} className={palette.criteriaCell}>
+                    {criterion.description}
+                  </td>
+                ))}
               </tr>
               <tr>
                 <th className={palette.leftLabel}>Competencia</th>
                 <td className={palette.leftCell}>{instrument.competence}</td>
+                {instrument.criteria.map((criterion) => (
+                  <td key={`${criterion.id}-competencia`} colSpan={2} className={palette.criteriaCell}>
+                    {" "}
+                  </td>
+                ))}
               </tr>
               <tr>
                 <th className={palette.leftLabel}>Capacidad</th>
@@ -239,27 +253,18 @@ export function InstrumentBuilder({
                     ))}
                   </ul>
                 </td>
+                {instrument.criteria.map((criterion) => (
+                  <td key={`${criterion.id}-capacidad`} colSpan={2} className={palette.criteriaCell}>
+                    {" "}
+                  </td>
+                ))}
               </tr>
               <tr>
                 <th className={palette.leftLabel}>Desempeño precisado</th>
                 <td className={palette.leftCell}>{instrument.performance}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <table className="border-collapse text-sm">
-            <thead>
-              <tr className={palette.sectionTitleBg}>
-                <th colSpan={instrument.criteria.length} className={palette.sectionTitle}>
-                  Criterios de evaluación
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
                 {instrument.criteria.map((criterion) => (
-                  <td key={criterion.id} className={palette.criteriaCell}>
-                    {criterion.description}
+                  <td key={`${criterion.id}-desempeno`} colSpan={2} className={palette.criteriaCell}>
+                    {" "}
                   </td>
                 ))}
               </tr>
@@ -269,18 +274,9 @@ export function InstrumentBuilder({
 
         <table className="min-w-[1100px] border-collapse text-sm">
           <thead>
-            <tr className={palette.bottomHeader}>
+            <tr className={palette.yesNoRow}>
               <th className={palette.numberHeader}>N°</th>
               <th className={palette.studentHeader}>Nombres y apellidos</th>
-              {instrument.criteria.map((criterion) => (
-                <th key={criterion.id} colSpan={2} className={palette.bottomHeaderCell}>
-                  {criterion.title}
-                </th>
-              ))}
-            </tr>
-            <tr className={palette.yesNoRow}>
-              <th className={palette.yesNoCell} />
-              <th className={palette.yesNoCell} />
               {instrument.criteria.flatMap((criterion) => [
                 <th key={`${criterion.id}-si`} className={palette.yesNoCell}>
                   Si

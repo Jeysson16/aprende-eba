@@ -29,6 +29,12 @@ export default async function InstrumentosPage() {
               Exportar formato
             </Link>
             <Link
+              href={`/api/admin/instruments/${instrument.id}/xlsx`}
+              className="rounded-full border border-emerald-300/40 px-4 py-2 font-medium text-emerald-200"
+            >
+              Descargar XLSX
+            </Link>
+            <Link
               href="/admin/instrumentos/nuevo"
               className="rounded-full bg-cyan-300 px-4 py-2 font-medium text-slate-950"
             >
