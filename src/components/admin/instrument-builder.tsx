@@ -52,7 +52,11 @@ function renderMark(
   if (mark === target) {
     return (
       <span
-        className={variant === "export" ? "text-sm font-black text-black" : "text-base font-black text-cyan-300"}
+        className={
+          variant === "export"
+            ? "text-sm font-black text-black"
+            : "inline-flex h-6 w-6 items-center justify-center text-base font-black text-cyan-300"
+        }
       >
         X
       </span>
@@ -62,7 +66,11 @@ function renderMark(
   if (mark === "parcial" && target === "si") {
     return (
       <span
-        className={variant === "export" ? "text-xs font-bold text-black" : "text-xs font-bold text-amber-300"}
+        className={
+          variant === "export"
+            ? "text-xs font-bold text-black"
+            : "inline-flex h-6 w-6 items-center justify-center text-xs font-bold text-amber-300"
+        }
       >
         /
       </span>
@@ -144,23 +152,23 @@ export function InstrumentBuilder({
           "border border-cyan-500/30 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.12em] text-cyan-50",
         sectionTitleBg: "bg-[#03233f]",
         leftLabel:
-          "w-32 border border-cyan-500/25 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-100",
+          "w-28 border border-cyan-500/25 px-3 py-3 text-left text-[0.78rem] font-semibold uppercase tracking-[0.06em] text-slate-100",
         leftCell: "border border-cyan-500/25 px-4 py-3 align-top text-sm leading-8 text-slate-100",
-        criteriaCell: "w-[14rem] border border-cyan-500/25 px-4 py-4 align-top text-sm leading-8 text-slate-100",
+        criteriaCell: "w-[10rem] border border-cyan-500/25 px-3 py-4 align-top text-sm leading-8 text-slate-100",
         bottomHeader: "bg-[#071a36]",
         bottomHeaderCell:
           "border border-cyan-500/30 px-2 py-3 text-center text-[10px] font-semibold uppercase leading-5 tracking-[0.04em] text-slate-100",
         studentHeader:
-          "w-[28rem] border border-cyan-500/30 px-4 py-3 text-left text-[1.05rem] font-semibold uppercase tracking-[0.05em] text-white",
+          "w-[22rem] border border-cyan-500/30 px-4 py-3 text-left text-[1rem] font-semibold uppercase tracking-[0.05em] text-white",
         numberHeader:
           "w-16 border border-cyan-500/30 px-3 py-3 text-center text-sm font-semibold text-white",
         yesNoRow: "bg-[#082241] text-[11px] font-semibold uppercase text-cyan-50",
-        yesNoCell: "w-14 border border-cyan-500/25 px-2 py-2 text-center",
+        yesNoCell: "w-12 border border-cyan-500/25 px-2 py-2 text-center",
         bodyRow: "bg-[#010b1d]",
-        numberCell: "border border-cyan-500/25 px-3 py-3 text-sm font-semibold text-slate-100",
+        numberCell: "border border-cyan-500/25 px-3 py-2 text-sm font-semibold text-slate-100",
         studentCell:
-          "border border-cyan-500/25 px-4 py-3 text-sm font-medium uppercase tracking-[0.02em] text-slate-100",
-        markCell: "border border-cyan-500/25 px-2 py-3 text-center align-middle",
+          "border border-cyan-500/25 px-4 py-2 text-sm font-medium uppercase tracking-[0.02em] text-slate-100",
+        markCell: "border border-cyan-500/25 px-2 py-2 text-center align-middle",
       };
 
   return (
@@ -213,7 +221,7 @@ export function InstrumentBuilder({
           </tbody>
         </table>
 
-        <div className="min-w-[1100px]">
+        <div className="min-w-[980px]">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className={palette.sectionTitleBg}>
@@ -230,7 +238,7 @@ export function InstrumentBuilder({
                 <th className={palette.leftLabel}>Propósito</th>
                 <td className={palette.leftCell}>{instrument.purpose}</td>
                 {instrument.criteria.map((criterion) => (
-                  <td key={criterion.id} colSpan={2} className={palette.criteriaCell}>
+                  <td key={criterion.id} colSpan={2} rowSpan={4} className={palette.criteriaCell}>
                     {criterion.description}
                   </td>
                 ))}
@@ -238,11 +246,6 @@ export function InstrumentBuilder({
               <tr>
                 <th className={palette.leftLabel}>Competencia</th>
                 <td className={palette.leftCell}>{instrument.competence}</td>
-                {instrument.criteria.map((criterion) => (
-                  <td key={`${criterion.id}-competencia`} colSpan={2} className={palette.criteriaCell}>
-                    {" "}
-                  </td>
-                ))}
               </tr>
               <tr>
                 <th className={palette.leftLabel}>Capacidad</th>
@@ -253,26 +256,16 @@ export function InstrumentBuilder({
                     ))}
                   </ul>
                 </td>
-                {instrument.criteria.map((criterion) => (
-                  <td key={`${criterion.id}-capacidad`} colSpan={2} className={palette.criteriaCell}>
-                    {" "}
-                  </td>
-                ))}
               </tr>
               <tr>
                 <th className={palette.leftLabel}>Desempeño precisado</th>
                 <td className={palette.leftCell}>{instrument.performance}</td>
-                {instrument.criteria.map((criterion) => (
-                  <td key={`${criterion.id}-desempeno`} colSpan={2} className={palette.criteriaCell}>
-                    {" "}
-                  </td>
-                ))}
               </tr>
             </tbody>
           </table>
         </div>
 
-        <table className="min-w-[1100px] border-collapse text-sm">
+        <table className="min-w-[980px] border-collapse text-sm">
           <thead>
             <tr className={palette.yesNoRow}>
               <th className={palette.numberHeader}>N°</th>
